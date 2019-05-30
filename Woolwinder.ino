@@ -14,7 +14,7 @@ const int SIGPR=24;
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
 
-#define D_BG
+#define DBG
 
 #ifdef DBG
 #define Serial_begin Serial.begin
@@ -30,15 +30,17 @@ const int PinCLK=7;                   // Used for generating interrupts using CL
 const int PinDT=8;                    // Used for reading DT signal
 const int PinSW=9;                    // Used for the push button switch
 bool bLastCLK=false;
-const int PinSig=4;
+const int PinSig=4;                   //rpm input
+const int PinVR=3;                     //speed PWM
+const int pinEL=2;                     //enable
 
 void setup() {
     Serial_begin(9600);
     Serial_println("Woolwinder");
 
     pinMode(PinSig, INPUT);
-    pinMode(2, OUTPUT);
-    pinMode(3, OUTPUT);
+    pinMode(PinVR, OUTPUT);
+    pinMode(pinEL, OUTPUT);
     
     pinMode(LED_BUILTIN, OUTPUT);
 
@@ -89,7 +91,9 @@ void loop() {
   digitalWrite(LED_BUILTIN, ((cnt/10)&1)!=0);
 
   const int iMin=30;
-  analogWrite(2,iMin + (long(iRPM)*(255-iMin)/1000));
+  int value = iMin + (long(iRPM)*(255-iMin)/1000);
+  if (value > 50) value = 128;
+  analogWrite(PinVR, value);
 
   if(iRPM<1) return;
   
@@ -105,6 +109,8 @@ void loop() {
     //const int iMSTEPS=(long(STEPS_PERREV*32)*GEAR_B)/GEAR_A;
 
     Serial_print(iRPM);
+    Serial_print(",");
+    Serial_print(value);
     Serial_print(",");
     Serial_print(iStepCount);
     Serial_print(",");
@@ -154,7 +160,7 @@ void stepperAdvance() {
   };
 
 
-  digitalWrite(3,iRPM>0);
+  digitalWrite(pinEL,iRPM>0);
 
 }
 
@@ -186,5 +192,3 @@ void handleDisplay() {
     display.println(cnt);
     display.display();
 }
-
-
